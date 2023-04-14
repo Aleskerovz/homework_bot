@@ -2,6 +2,7 @@ import logging
 import os
 import sys
 import time
+from http import HTTPStatus
 
 import requests
 import telegram
@@ -106,7 +107,7 @@ def get_api_answer(timestamp):
         homework = requests.get(**params)
     except requests.exceptions.RequestException as error:
         raise ConnectionError(ERROR_ANSWER.format(error=error, **params))
-    if homework.status_code != 200:
+    if homework.status_code != HTTPStatus.OK:
         raise RuntimeError(
             FAILED_REQUEST.format(status=homework.status_code, **params))
     homework_json = homework.json()
