@@ -10,6 +10,7 @@ import telegram
 from dotenv import load_dotenv
 
 import constants
+import exceptions
 
 load_dotenv()
 
@@ -70,21 +71,14 @@ def get_api_answer(timestamp):
         raise ConnectionError(
             constants.ERROR_ANSWER.format(error=error, **params))
     if homework.status_code != HTTPStatus.OK:
-        raise RuntimeError(
+        raise exceptions.FailedRequestException(
             constants.FAILED_REQUEST.format(
                 status=homework.status_code, **params))
     try:
         homework_json = homework.json()
     except json.JSONDecodeError as error:
-        raise RuntimeError(
+        raise exceptions.JSONDecodeException(
             constants.ERROR_ANSWER.format(error=error, **params))
-    for error in ('code', 'error'):
-        if error in homework_json:
-            raise RuntimeError(constants.SERVER_FAILURES.format(
-                error=error,
-                value=homework_json[error],
-                **params
-            ))
     return homework_json
 
 
@@ -131,13 +125,12 @@ def main():
                 timestamp = response.get(
                     'current_date', timestamp
                 )
+                previous_message = ''
         except Exception as error:
             message = constants.EXCEPTION_ERROR_MESSAGE.format(error=error)
             logging.exception(message)
             if previous_message != message and send_message(bot, message):
                 previous_message = message
-            elif previous_message == message:
-                previous_message = ''
         time.sleep(RETRY_PERIOD)
 
 
